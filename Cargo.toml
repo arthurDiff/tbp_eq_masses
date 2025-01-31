@@ -1,0 +1,6 @@
+[package]
+name = "tbp_eq_masses"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
