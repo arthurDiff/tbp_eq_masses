@@ -6,7 +6,6 @@ pub(crate) struct Orb {
     radius: f32,
     direction: Vec3,
     acceleration: f32,
-    mass: f32,
     texture: Option<Texture2D>,
     color: Color,
 }
@@ -17,7 +16,6 @@ impl Orb {
         radius: f32,
         direction: Vec3,
         acceleration: f32,
-        mass: f32,
         texture: Option<Texture2D>,
         color: Color,
     ) -> Self {
@@ -26,7 +24,6 @@ impl Orb {
             radius,
             direction,
             acceleration,
-            mass,
             texture,
             color,
         }
@@ -38,23 +35,25 @@ impl Orb {
         texture: Option<Texture2D>,
         color: Color,
     ) -> Self {
-        Self::new(
-            position,
-            radius,
-            Vec3::new(0., 0., 0.),
-            0.,
-            0.,
-            texture,
-            color,
-        )
+        Self::new(position, radius, Vec3::new(0., 0., 0.), 0., texture, color)
     }
 
-    pub fn animate(&self) {
+    pub fn animate(&mut self) {
+        self.move_orb();
+
         macroquad::models::draw_sphere(
             self.position,
             self.radius,
             self.texture.as_ref(),
             self.color,
         );
+    }
+
+    fn move_orb(&mut self) {
+        self.position = Vec3::new(
+            self.direction.x * self.acceleration,
+            self.direction.y * self.acceleration,
+            self.direction.z * self.acceleration,
+        )
     }
 }
