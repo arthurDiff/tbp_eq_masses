@@ -20,7 +20,7 @@ fn window_config() -> Conf {
 }
 #[macroquad::main(window_config)]
 async fn main() -> Result<()> {
-    let mut cam = camera::Camera::new(vec3(-20., 15., 0.), vec3(0., 1., 0.), vec3(0., 1., 0.));
+    let mut cam = camera::Camera::new(vec3(-20., 15., 0.), vec3(0., 0., 0.), vec3(0., 1., 0.));
     let mut orb = orb::Orb::new_stationary(vec3(-0., 0., 0.), 1., None, color::BLUE);
     loop {
         clear_background(BLACK_BACKGROUND);
