@@ -6,8 +6,6 @@ use macroquad::{
 
 pub(crate) struct Camera(pub Camera3D);
 
-const MOUSE_SENSITIVITY: f32 = 30.;
-
 impl Camera {
     pub fn new(position: Vec3, target: Vec3, up: Vec3) -> Self {
         Self(Camera3D {
