@@ -6,6 +6,8 @@ use macroquad::{
 
 const ROTATION_SENSITIVITY: f32 = 5.;
 
+type Matrix3D = [[f32; 3]; 3];
+
 pub(crate) struct Camera(pub Camera3D);
 
 impl Camera {
@@ -44,20 +46,42 @@ impl Camera {
             delta_y * ROTATION_SENSITIVITY,
         );
 
-        let forward = (self.0.target - self.0.position).normalize_or_zero();
+        let relative_pos = self.0.position - self.0.target;
+        let forward = relative_pos.normalize_or_zero();
         let right = self.0.up.cross(forward).normalize_or_zero();
+        let real_up = forward.cross(right).normalize_or_zero();
 
         // rotation around y axis
-        let forward = Self::rotate_by_axis(forward, self.0.up.normalize_or_zero(), delta_x);
+        let (cos_yt, sin_yt) = (delta_x.cos(), delta_x.sin());
+        let pos_after_y = Vec3::new(
+            cos_yt * relative_pos.x + sin_yt * relative_pos.z,
+            relative_pos.y,
+            -sin_yt * relative_pos.x + cos_yt * relative_pos.z,
+        );
+
+        // new local
+        let forward = pos_after_y.normalize();
+        let right = self.0.up.cross(forward).normalize();
 
         // rotation around x axis
-        let forward = Self::rotate_by_axis(forward, right, delta_y);
+        let (cos_xt, sin_xt) = (delta_y.cos(), delta_y.sin());
+        let x_matrix = [[1., 0., 0.], [0., cos_xt, -sin_xt], [0., sin_xt, cos_xt]];
 
-        let center_mag = (self.0.target - self.0.position).magnitude();
+        // local_to_world
+        let loc_to_w = [
+            [right.x, real_up.x, forward.x],
+            [right.y, real_up.y, forward.y],
+            [right.z, real_up.z, forward.z],
+        ];
 
-        self.0.position.x = self.0.target.x + forward.x * center_mag;
-        self.0.position.y = self.0.target.y + forward.y * center_mag;
-        self.0.position.z = self.0.target.z + forward.z * center_mag;
+        // transform to world
+        let local_pos = loc_to_w.transpose().multiply_vec3(pos_after_y);
+
+        // Apply x rot in local scope
+        let rot_local = x_matrix.multiply_vec3(local_pos);
+
+        // target + transformed back relative pos
+        self.0.position = self.0.target + loc_to_w.multiply_vec3(rot_local);
     }
 
     fn handle_zoom(&mut self) {
@@ -68,24 +92,28 @@ impl Camera {
         }
         self.0.position *= if wheel_y > 0. { 0.95 } else { 1.05 };
     }
+}
 
-    fn rotate_by_axis(v: Vec3, axis: Vec3, theta: f32) -> Vec3 {
-        let (cos_t, sin_t) = (theta.cos(), theta.sin());
-        let (axis_cross, axis_dot) = (axis.cross(v), axis.dot(v));
-        Vec3::new(
-            v.x * cos_t + axis_cross.x * sin_t * axis.x * axis_dot * (1. - theta),
-            v.y * cos_t + axis_cross.y * sin_t * axis.y * axis_dot * (1. - theta),
-            v.z * cos_t + axis_cross.z * sin_t * axis.z * axis_dot * (1. - theta),
-        )
+trait MatrixMath {
+    fn transpose(&self) -> Self;
+
+    fn multiply_vec3(&self, pos: Vec3) -> Vec3;
+}
+
+impl MatrixMath for Matrix3D {
+    fn transpose(&self) -> Self {
+        [
+            [self[0][0], self[1][0], self[2][0]],
+            [self[0][1], self[1][1], self[2][1]],
+            [self[0][2], self[1][2], self[2][2]],
+        ]
     }
-}
 
-trait VectorMath<T> {
-    fn magnitude(&self) -> f32;
-}
-
-impl VectorMath<Vec3> for Vec3 {
-    fn magnitude(&self) -> f32 {
-        (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
+    fn multiply_vec3(&self, pos: Vec3) -> Vec3 {
+        Vec3::new(
+            self[0][0] * pos.x + self[0][1] * pos.y + self[0][2] * pos.z,
+            self[1][0] * pos.x + self[1][1] * pos.y + self[1][2] * pos.z,
+            self[2][0] * pos.x + self[2][1] * pos.y + self[2][2] * pos.z,
+        )
     }
 }
