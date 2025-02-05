@@ -1,3 +1,5 @@
+use std::future::Future;
+
 use macroquad::{
     camera::{set_camera, set_default_camera, Camera3D},
     input::{is_mouse_button_down, mouse_delta_position, mouse_wheel, MouseButton},
@@ -6,7 +8,7 @@ use macroquad::{
 
 const ROTATION_SENSITIVITY: f32 = 5.;
 
-type Matrix3D = [[f32; 3]; 3];
+struct Matrix3D([[f32; 3]; 3]);
 
 pub(crate) struct Camera(pub Camera3D);
 
@@ -20,14 +22,15 @@ impl Camera {
         })
     }
 
-    pub fn spawn_camera_space<T>(&mut self, space_fn: T)
+    pub async fn spawn_camera_space<F, Fut>(&mut self, space_fn: F)
     where
-        T: FnOnce(),
+        F: FnOnce() -> Fut,
+        Fut: Future<Output = ()>,
     {
         self.handle_rotation();
         self.handle_zoom();
         set_camera(&self.0);
-        space_fn();
+        space_fn().await;
         set_default_camera();
     }
 
@@ -65,14 +68,14 @@ impl Camera {
 
         // rotation around x axis
         let (cos_xt, sin_xt) = (delta_y.cos(), delta_y.sin());
-        let x_matrix = [[1., 0., 0.], [0., cos_xt, -sin_xt], [0., sin_xt, cos_xt]];
+        let x_matrix = Matrix3D([[1., 0., 0.], [0., cos_xt, -sin_xt], [0., sin_xt, cos_xt]]);
 
         // local_to_world
-        let loc_to_w = [
+        let loc_to_w = Matrix3D([
             [right.x, real_up.x, forward.x],
             [right.y, real_up.y, forward.y],
             [right.z, real_up.z, forward.z],
-        ];
+        ]);
 
         // transform to world
         let local_pos = loc_to_w.transpose().multiply_vec3(pos_after_y);
@@ -94,19 +97,13 @@ impl Camera {
     }
 }
 
-trait MatrixMath {
-    fn transpose(&self) -> Self;
-
-    fn multiply_vec3(&self, pos: Vec3) -> Vec3;
-}
-
-impl MatrixMath for Matrix3D {
+impl Matrix3D {
     fn transpose(&self) -> Self {
-        [
+        Self([
             [self[0][0], self[1][0], self[2][0]],
             [self[0][1], self[1][1], self[2][1]],
             [self[0][2], self[1][2], self[2][2]],
-        ]
+        ])
     }
 
     fn multiply_vec3(&self, pos: Vec3) -> Vec3 {
@@ -115,5 +112,13 @@ impl MatrixMath for Matrix3D {
             self[1][0] * pos.x + self[1][1] * pos.y + self[1][2] * pos.z,
             self[2][0] * pos.x + self[2][1] * pos.y + self[2][2] * pos.z,
         )
+    }
+}
+
+impl std::ops::Deref for Matrix3D {
+    type Target = [[f32; 3]; 3];
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
