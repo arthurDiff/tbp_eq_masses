@@ -12,6 +12,7 @@ use vec3_64::Vec3_64;
 mod camera;
 mod orb;
 mod result_error;
+mod store;
 mod vec3_64;
 
 const ICON: Icon = Icon {
@@ -33,22 +34,28 @@ fn window_config() -> Conf {
     }
 }
 
+const ORB_POS_OFFSET_1: f64 = 0.24308753;
+const ORB_POS_OFFSET_2: f64 = 0.97000436;
+const ORB_VEL_OFFSET_1: f64 = 0.43236573;
+const ORB_VEL_OFFSET_2: f64 = 0.466203685;
+
 // https://arxiv.org/abs/math/0011268
 #[macroquad::main(window_config)]
 async fn main() -> Result<()> {
+    let mut store = store::Store::new();
     let mut cam = camera::Camera::new(vec3(-4.5, 1., 0.), vec3(0., 0., 0.), vec3(0., 1., 0.));
     let (mut orb1, mut orb2, mut orb3) = (
         orb::Orb::new(
-            Vec3_64::new(0., -0.24308753, 0.97000436),
-            Vec3_64::new(0., 0.43236573, 0.466203685),
+            Vec3_64::new(0., -ORB_POS_OFFSET_1, ORB_POS_OFFSET_2),
+            Vec3_64::new(0., ORB_VEL_OFFSET_1, ORB_VEL_OFFSET_2),
             0.15,
             1.,
             1.,
             None,
         ),
         orb::Orb::new(
-            Vec3_64::new(0., 0.24308753, -0.97000436),
-            Vec3_64::new(0., 0.43236573, 0.466203685),
+            Vec3_64::new(0., ORB_POS_OFFSET_1, -ORB_POS_OFFSET_2),
+            Vec3_64::new(0., ORB_VEL_OFFSET_1, ORB_VEL_OFFSET_2),
             0.15,
             1.,
             1.,
@@ -56,7 +63,7 @@ async fn main() -> Result<()> {
         ),
         orb::Orb::new(
             Vec3_64::new(0., 0., 0.),
-            Vec3_64::new(0., -0.86473146, -0.93240737),
+            Vec3_64::new(0., -ORB_VEL_OFFSET_1 * 2., -ORB_VEL_OFFSET_2 * 2.),
             0.15,
             1.,
             1.,
@@ -68,6 +75,7 @@ async fn main() -> Result<()> {
         clear_background(BLACK_BACKGROUND);
         let delta = get_frame_time();
         let (orb1_i, orb2_i, orb3_i) = (orb1.info(), orb2.info(), orb3.info());
+        store.draw((&orb1_i, &orb2_i, &orb3_i));
 
         cam.spawn_camera_space(|| async {
             draw_grid(50, 1., GRID_COLOR, GRID_COLOR);

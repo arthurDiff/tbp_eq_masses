@@ -2,24 +2,24 @@ use macroquad::color::Color;
 
 use crate::vec3_64::Vec3_64;
 
-const DEFAULT_ORB_COLOR: Color = Color::new(0.85, 0.86, 0.86, 1.);
+pub const DEFAULT_ORB_COLOR: Color = Color::new(0.85, 0.86, 0.86, 1.);
 
 //Orb Collision Point
 const ORB_MIN_DIST: f64 = 0.0001;
-
 #[derive(Debug)]
 pub(crate) struct Orb {
-    pos: Vec3_64,
-    velocity: Vec3_64,
-    radius: f32,
-    mass: f64,
-    gravity: f64,
-    color: Color,
+    pub pos: Vec3_64,
+    pub velocity: Vec3_64,
+    pub radius: f32,
+    pub mass: f64,
+    pub gravity: f64,
+    pub color: Color,
 }
 
 pub(crate) struct OrbInfo {
-    pos: Vec3_64,
-    mass: f64,
+    pub pos: Vec3_64,
+    pub velocity: Vec3_64,
+    pub mass: f64,
 }
 
 impl Orb {
@@ -44,6 +44,7 @@ impl Orb {
     pub fn info(&self) -> OrbInfo {
         OrbInfo {
             pos: self.pos,
+            velocity: self.velocity,
             mass: self.mass,
         }
     }
@@ -62,6 +63,10 @@ impl Orb {
         self.pos += self.velocity * delta_time as f64;
 
         // draw newly positioned orb
+        self.draw();
+    }
+
+    pub fn draw(&self) {
         macroquad::models::draw_sphere(self.pos.into(), self.radius, None, self.color);
     }
 
