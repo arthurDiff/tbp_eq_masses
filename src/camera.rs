@@ -22,13 +22,15 @@ impl Camera {
         })
     }
 
-    pub async fn spawn_camera_space<F, Fut>(&mut self, space_fn: F)
+    pub async fn spawn_camera_space<F, Fut>(&mut self, controllable: bool, space_fn: F)
     where
         F: FnOnce() -> Fut,
         Fut: Future<Output = ()>,
     {
-        self.handle_rotation();
-        self.handle_zoom();
+        if controllable {
+            self.handle_rotation();
+            self.handle_zoom();
+        }
         set_camera(&self.0);
         space_fn().await;
         set_default_camera();

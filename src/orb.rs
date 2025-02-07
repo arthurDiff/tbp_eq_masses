@@ -3,6 +3,7 @@ use macroquad::color::Color;
 use crate::vec3_64::Vec3_64;
 
 pub const DEFAULT_ORB_COLOR: Color = Color::new(0.85, 0.86, 0.86, 1.);
+pub const DEFAULT_OUTLINE_COLOR: Color = Color::new(0.414, 0.05, 0.676, 0.25);
 
 //Orb Collision Point
 const ORB_MIN_DIST: f64 = 0.0001;
@@ -49,7 +50,12 @@ impl Orb {
         }
     }
 
-    pub async fn animate(&mut self, other_orbs: (&OrbInfo, &OrbInfo), delta_time: f32) {
+    pub async fn animate(
+        &mut self,
+        other_orbs: (&OrbInfo, &OrbInfo),
+        draw_outline: bool,
+        delta_time: f32,
+    ) {
         let net_force =
             self.gravitational_force(other_orbs.0) + self.gravitational_force(other_orbs.1);
 
@@ -63,11 +69,19 @@ impl Orb {
         self.pos += self.velocity * delta_time as f64;
 
         // draw newly positioned orb
-        self.draw();
+        self.draw(draw_outline);
     }
 
-    pub fn draw(&self) {
+    pub fn draw(&self, draw_outline: bool) {
         macroquad::models::draw_sphere(self.pos.into(), self.radius, None, self.color);
+        if draw_outline {
+            macroquad::models::draw_sphere(
+                self.pos.into(),
+                self.radius * 1.2,
+                None,
+                DEFAULT_OUTLINE_COLOR,
+            );
+        }
     }
 
     /// F = G * (m1 * m2) / r**2

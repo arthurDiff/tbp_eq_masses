@@ -3,7 +3,6 @@ use macroquad::{
     math::vec3,
     miniquad::conf::Icon,
     models::draw_grid,
-    time::get_frame_time,
     window::{clear_background, next_frame, Conf},
 };
 use result_error::*;
@@ -73,17 +72,30 @@ async fn main() -> Result<()> {
 
     loop {
         clear_background(BLACK_BACKGROUND);
-        let delta = get_frame_time();
         let (orb1_i, orb2_i, orb3_i) = (orb1.info(), orb2.info(), orb3.info());
-        store.draw((&orb1_i, &orb2_i, &orb3_i));
+        let mouse_over_ui = store.draw((&orb1_i, &orb2_i, &orb3_i));
 
-        cam.spawn_camera_space(|| async {
+        let selected_orb_num = store.get_selected_orb_number();
+
+        // using fixed time delta to alleviate compounding position calculation error
+        cam.spawn_camera_space(!mouse_over_ui, || async {
             draw_grid(50, 1., GRID_COLOR, GRID_COLOR);
-
             futures::future::join3(
-                orb1.animate((&orb2_i, &orb3_i), delta),
-                orb2.animate((&orb1_i, &orb3_i), delta),
-                orb3.animate((&orb1_i, &orb2_i), delta),
+                orb1.animate(
+                    (&orb2_i, &orb3_i),
+                    selected_orb_num == 1,
+                    store.fixed_delta_time,
+                ),
+                orb2.animate(
+                    (&orb1_i, &orb3_i),
+                    selected_orb_num == 2,
+                    store.fixed_delta_time,
+                ),
+                orb3.animate(
+                    (&orb1_i, &orb2_i),
+                    selected_orb_num == 3,
+                    store.fixed_delta_time,
+                ),
             )
             .await;
         })
