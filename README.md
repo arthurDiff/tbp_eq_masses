@@ -6,4 +6,6 @@
   </p>
 </div>
 
-**Planets be spinning**
+Paper mentioned above paper provides solution for three body problem with specific condition.
+
+This simulation provides visual representation of said condition.
