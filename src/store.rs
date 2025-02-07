@@ -84,8 +84,8 @@ impl Store {
             ui.label(None, "Delta Time");
             ui.slider(
                 hash!(),
-                "[.00001 .. .1]",
-                0.00001f32..0.1f32,
+                "[0..0.2]",
+                0f32..0.2f32,
                 &mut self.fixed_delta_time,
             );
 
